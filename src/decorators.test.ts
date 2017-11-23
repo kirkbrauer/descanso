@@ -199,22 +199,22 @@ describe('decorators', () => {
     it('takes a function that returns a Promise and converts it into a handler', (done: Function) => {
       class RespondTestRouter extends Router {
         @route('/', 'get')
-        @respond(status.Ok)
-        default(): Promise<ServerStatus> {
+        @respond()
+        default(req: Request): Promise<ServerStatus> {
           return new Promise((resolve, reject) => {
-            resolve(new status.Ok({ some: 'data' }));
+            resolve(new status.Ok({ some: 'data' }, { id: req.params.id }));
           });
         }
       }
       const instance = new RespondTestRouter();
-      chai.expect((instance.default() as any)._type).to.equal('get');
-      chai.expect((instance.default() as any)._path).to.equal('/');
-      chai.expect((instance.default() as any)._handlers.length).to.equal(1);
-      chai.expect((instance.default() as any)._handlers[0]).to.be.a('function');
+      chai.expect((instance.default as any)()._type).to.equal('get');
+      chai.expect((instance.default as any)()._path).to.equal('/');
+      chai.expect((instance.default as any)()._handlers.length).to.equal(1);
+      chai.expect((instance.default as any)()._handlers[0]).to.be.a('function');
       function fakeRespond(response: any) { }
       const responseSpy = chai.spy(fakeRespond);
-      (instance.default() as any)._handlers[0]({}, { respond: responseSpy }).then((data: any) => {
-        chai.expect(responseSpy).to.have.been.called.with.exactly({ value: { some: 'data' } });
+      (instance.default as any)()._handlers[0]({ params: { id: '1234' } }, { respond: responseSpy }).then((data: any) => {
+        chai.expect(responseSpy).to.have.been.called.with.exactly({ value: { some: 'data' }, metadata: { id: '1234' } });
         done();
       });
     });

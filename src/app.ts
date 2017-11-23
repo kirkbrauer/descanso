@@ -66,6 +66,7 @@ const configOptions: ConfigOption[] = [
  * @interface AppConfig
  */
 export interface AppConfig {
+  [key: string]: any;
   debug?: boolean;
   port?: number;
   httpsPort?: number;
@@ -104,14 +105,13 @@ export class App {
 
   /**
    * The app config
-   * @private
    * @type {AppConfig}
    * @memberof App
    */
-  private config: AppConfig;
+  public config: AppConfig;
 
-  private apis: Api[] = [];
-  private versionedApis: Api[] = [];
+  public routers: Router[] = [];
+  public versionedApis: Api[] = [];
 
   /**
    * Creates an instance of App
@@ -121,19 +121,16 @@ export class App {
    * @param {string} [hostname] 
    * @memberof App
    */
-  constructor(
-    port?: number,
-    https?: boolean,
-    httpsPort?: number,
-    httpsOptions?: https.ServerOptions,
-    hostname?: string) {
+  constructor(config?: AppConfig | number) {
     this.config = {};
-    // Set config values if specified
-    if (port !== undefined) this.set('port', port);
-    if (https !== undefined) this.set('https', https);
-    if (httpsOptions !== undefined) this.set('httpsOptions', httpsOptions);
-    if (httpsPort !== undefined) this.set('httpsPort', httpsPort);
-    if (hostname !== undefined) this.set('hostname', hostname);
+    if (config !== undefined) {
+      // Set config values
+      if (typeof config === 'number') {
+        this.set('port', config);
+      } else {
+        this.setConfig(config);
+      }
+    }
     // Create the express server
     this.http();
     if (this.config.https === true) {
@@ -157,7 +154,7 @@ export class App {
       if (opt.key === key) {
         // Check the type of the config value
         if (typeof value === opt.type) return true;
-        else throw new Error(
+        throw new Error(
           '\'' + key + '\' is of an incorrect type, it must be a \'' + opt.type + '\'.',
         );
       }
@@ -173,6 +170,17 @@ export class App {
   }
 
   /**
+   * Sets the app configuration
+   * @param {AppConfig} config 
+   * @memberof App
+   */
+  public setConfig(config: AppConfig): void {
+    for (const key in config) {
+      this.set(key, config[key]);
+    }
+  }
+
+  /**
    * Gets a config value
    * @param {string} key
    * @returns {*}
@@ -180,6 +188,15 @@ export class App {
    */
   public get(key: string): any {
     return (this.config as any)[key];
+  }
+
+  /**
+   * Configure the default descanso middleware
+   * @private
+   * @memberof App
+   */
+  private configureMiddleware(): void {
+    this.expressApp.use(descansoMiddleware(this));
   }
 
   /**
@@ -195,26 +212,26 @@ export class App {
   }
 
   /**
-   * Configure the default descanso middleware
-   * @private
-   * @memberof App
-   */
-  private configureMiddleware(): void {
-    this.expressApp.use(descansoMiddleware(this));
-  }
-
-  /**
    * Creates a HTTPS server
    * @param {https.ServerOptions} options
    * @returns {https.Server}
    * @memberof App
    */
-  public https(options: https.ServerOptions): https.Server {
-    if (options === undefined) throw new Error('HTTPS options are required');
+  public https(options?: https.ServerOptions): https.Server {
+    let opts: https.ServerOptions;
+    if (options === undefined && this.config.httpsOptions === undefined) {
+      throw new Error('HTTPS options are required');
+    } else {
+      if (options !== undefined) {
+        opts = options;
+      } else {
+        opts = this.config.httpsOptions as https.ServerOptions;
+      }
+    }
     // Create the HTTP server first
     this.http();
     // Create the HTTPS server
-    this.httpsServer = https.createServer(options, this.expressApp as any);
+    this.httpsServer = https.createServer(opts, this.expressApp as any);
     return this.httpsServer;
   }
 
@@ -226,19 +243,23 @@ export class App {
   public connect(...routers: (Router | Api)[]): void {
     // Add all connected routers
     for (const router of routers) {
-      // Connect the api at a version if it has one
+      // Set the API path to the version if it has one
       if (router.version !== undefined && !router.versionQuery) {
         const path: string = router.path + '/v' + router.version;
         router.path = path.replace('//', '/');
       }
       // Check to see if there are path or versioning conflicts
-      for (let i = 0; i < this.apis.length; i += 1) {
-        if (this.apis[i].path === router.path &&
-          !(router.versionQuery || this.apis[i].versionQuery)) {
-          throw new Error('Apis cannot share a path');
-        } else if (this.apis[i].path === router.path) {
-          if (this.apis[i].version === router.version) {
-            throw new Error('Apis cannot share a path and have the same version number');
+      for (let i = 0; i < this.routers.length; i += 1) {
+        if (this.routers[i].path === router.path) {
+          if (!(router.versionQuery || this.routers[i].versionQuery)) {
+            // The router does not have a version query
+            throw new Error('Routers cannot share a path');
+          } else {
+            // The router does have a version query
+            if (this.routers[i].version === router.version) {
+              // The versions are the same
+              throw new Error('Apis cannot share a path and have the same version number');
+            }
           }
         }
       }
@@ -249,16 +270,15 @@ export class App {
         // Add to the app router
         this.expressApp.use(router.path, router.middleware, router.expressRouter);
       }
-      this.apis.push(router as Api);
+      this.routers.push(router);
     }
   }
 
   /**
    * Dynamically connect all the versioned APIs
-   * @private
    * @memberof App
    */
-  private connectVersionedApis(): void {
+  public connectVersionedApis(): void {
     // The APIs sorted by path
     let apiPaths: _.Dictionary<Api[]>;
     // Sort the versioned APIs by version number

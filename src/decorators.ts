@@ -11,7 +11,7 @@ import * as express from 'express';
 
 import { App, Request, Response } from './app';
 import { ServerStatus, ServerError } from './status';
-import { Resource } from './Resource';
+import { Resource } from './resource';
 import * as status from './statusCodes';
 
 /*
@@ -158,7 +158,7 @@ export function respond(successResponse?: any, metadata?: any): any {
         // Catch any errors that result from an invalid return type
         try {
           // Trigger the original method, which should return a promise
-          promise = descriptor.value().then((data: any) => {
+          promise = descriptor.value(req, res).then((data: any) => {
             let response;
             // Check if the data is actually a ServerStatus
             if (data instanceof ServerStatus) {
@@ -217,10 +217,9 @@ export function action(target: any, propertyKey: string, descriptor: PropertyDes
     decorated = route(path, (propertyKey as any))(target, propertyKey, decorated);
     // Return the final property descriptor
     return decorated;
-  } else {
-    // Throw an error if the decorator is used on a method with an invalid name
-    throw new Error('The @action decorator cannot be applied to non-standard resource actions');
   }
+  // Throw an error if the decorator is used on a method with an invalid name
+  throw new Error('The @action decorator cannot be applied to non-standard resource actions');
 }
 
 /**

@@ -73,7 +73,14 @@ export class ServerStatus {
  */
 export interface InnerError {
   code: string;
-  innererror: InnerError;
+  innererror?: InnerError | any;
+}
+
+export interface ServerErrorOptions {
+  message?: string;
+  error?: Error | Error[];
+  innererror?: InnerError;
+  target?: string;
 }
 
 /**
@@ -92,13 +99,17 @@ export class ServerError extends ServerStatus {
    * @param {string} [target] The target of the error
    * @memberof ServerError
    */
-  constructor(message: string, details?: Error | Error[], innererror?: InnerError, target?: string) {
+  constructor(options: ServerErrorOptions) {
     super();
-    this.message = message;
-    if (details !== undefined) this.details = details;
-    if (innererror !== undefined) this.innererror = innererror;
-    if (target !== undefined) this.target = target;
+    if (options.message !== undefined) this.message = options.message;
+    if (options.error !== undefined) this.error = options.error;
+    if (options.innererror !== undefined) this.innererror = options.innererror;
+    if (options.target !== undefined) this.target = options.target;
   }
+
+  public static status: number = 500;
+
+  public static code: string = 'InternalServerError';
 
   /**
    * The error message
@@ -119,7 +130,7 @@ export class ServerError extends ServerStatus {
    * @type {(Error | Error[])}
    * @memberof ServerError
    */
-  public details: Error | Error[];
+  public error: Error | Error[];
 
   /**
    * An inner error for explanation
@@ -134,10 +145,19 @@ export class ServerError extends ServerStatus {
    * @memberof ServerError
    */
   public toObject(): any {
-    let details;
-    if (this.details !== undefined) {
-      // Convert the details to a string
-      details = this.details.toString();
+    let error: string | string[] | undefined;
+    if (this.error !== undefined) {
+      // Check if there is an array of errors
+      if (Array.isArray(this.error)) {
+        error = [];
+        // Convert each error into a string
+        for (let i = 0; i < (this.error as Error[]).length; i += 1) {
+          error.push((this.error as Error[])[i].toString());
+        }
+      } else {
+        // Convert the error to a string
+        error = this.error.toString();
+      }
     }
     return {
       error: {
@@ -145,7 +165,7 @@ export class ServerError extends ServerStatus {
         code: Object.getPrototypeOf(this).constructor.code,
         message: this.message,
         target: this.target,
-        details,
+        error,
         innererror: this.innererror
       }
     };

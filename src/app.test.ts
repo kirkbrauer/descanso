@@ -1,75 +1,215 @@
 import 'mocha';
-import { expect, assert } from 'chai';
+import * as chai from 'chai';
 import * as portscanner from 'portscanner';
+import chaiHttp = require('chai-http');
+chai.use(chaiHttp);
 
-import { App } from '../src';
+import { App, Request, Response } from './app';
+import { Router } from './router';
+import { Api } from './Api';
+import { get, connect, route, versionQuery, version } from './decorators';
 
 describe('App', () => {
   let testApp: App;
-
-  before(() => {
-    testApp = new App(4000);
+  describe('constructor()', () => {
+    before(() => {
+      testApp = new App(4000);
+    });
+    it('sets the port if a number is the argument', () => {
+      chai.expect(testApp.config.port).to.equal(4000);
+    });
+    before(() => {
+      testApp = new App({
+        port: 4000,
+        httpsPort: 4433,
+        httpsOptions: {},
+        https: false,
+        hostname: 'test.com'
+      });
+    });
+    it('sets the config values if an object is provided', () => {
+      chai.expect(testApp.config).to.deep.equal({
+        port: 4000,
+        httpsPort: 4433,
+        httpsOptions: {},
+        https: false,
+        hostname: 'test.com'
+      });
+    });
+    it('should work with HTTPS', () => {
+      testApp = new App({
+        port: 4000,
+        https: true,
+        httpsOptions: {},
+        httpsPort: 4433,
+        hostname: 'test.com'
+      });
+    });
+    it('should not allow HTTPS if a port or options are missing', () => {
+      chai.expect(() => {
+        testApp = new App({
+          port: 4000,
+          https: true,
+          hostname: 'test.com'
+        });
+      }).to.throw(Error);
+    });
   });
-
-  describe('#config', () => {
-    it('values are returned by #get()', () => {
-      expect(testApp.get('port')).to.equal(4000);
+  describe('#set()', () => {
+    before(() => {
+      testApp = new App();
     });
-
-    it('values can be set by #set()', () => {
+    it('sets config values', () => {
       testApp.set('https', false);
-      expect(testApp.get('https')).to.equal(false);
+      chai.expect(testApp.config.https).to.equal(false);
     });
-
-    it('values can be set by #set()', () => {
-      testApp.set('https', false);
-      expect(testApp.get('https')).to.equal(false);
-    });
-
-    it('values cannot be of an incorrect type', () => {
-      expect(() => {
+    it('cannot set config values with an incorrect type', () => {
+      chai.expect(() => {
         testApp.set('port', 'bar');
       }).to.throw(Error);
     });
-
-    it('invalid values cannot be set', () => {
-      expect(() => {
+    it('cannot set invalid options', () => {
+      chai.expect(() => {
         testApp.set('foo', 'bar');
       }).to.throw(Error);
     });
   });
-
-  testApp = new App(4000);
-
-  describe('#http()', () => {
-    it('should return an HTTP server', () => {
-      expect(testApp.http()).to.haveOwnProperty('domain');
+  describe('#get()', () => {
+    before(() => {
+      testApp = new App(4000);
     });
-
-    it('should set the #httpServer property on the App', () => {
-      assert.isDefined(testApp.httpServer);
+    it('returns a config value', () => {
+      chai.expect(testApp.get('port')).to.equal(4000);
     });
   });
-
-  testApp = new App(4000);
-
+  describe('#http()', () => {
+    before(() => {
+      testApp = new App(4000);
+    });
+    it('should return an HTTP server', () => {
+      chai.expect(testApp.http()).to.haveOwnProperty('domain');
+    });
+    it('should set the #httpServer property on the App', () => {
+      chai.assert.isDefined(testApp.httpServer);
+    });
+  });
   describe('#https()', () => {
-    it('requires HTTPS options', () => {
-      expect(() => {
-        (testApp as any).https();
+    before(() => {
+      testApp = new App(4000);
+    });
+    it('should return a HTTPS server', () => {
+      chai.expect(testApp.https({})).to.haveOwnProperty('timeout');
+    });
+    it('should set the #httpsServer property on the App', () => {
+      chai.assert.isDefined(testApp.httpsServer);
+    });
+    it('should trigger the #http() function', () => {
+      chai.assert.isDefined(testApp.httpServer);
+    });
+    it('should require that httpsOptions are set', () => {
+      chai.expect(() => {
+        testApp.https();
       }).to.throw(Error);
     });
-
-    it('should return a HTTPS server', () => {
-      expect(testApp.https({})).to.haveOwnProperty('timeout');
+    it('should use the app httpsOptions when none are specified', () => {
+      testApp.set('httpsOptions', {});
+      testApp.https();
     });
-
-    it('should set the #httpsServer property on the App', () => {
-      assert.isDefined(testApp.httpsServer);
+  });
+  describe('#connect()', () => {
+    @route('/')
+    class TestRouter extends Router {
+      @get('/')
+      default(req: Request, res: Response) {
+        res.json({ foo: 'bar' });
+      }
+    }
+    @versionQuery('1.0')
+    @route('/')
+    class TestQueryApi extends Api {
+      @get('/')
+      default(req: Request, res: Response) {
+        res.json({ foo: 'bar' });
+      }
+    }
+    @version('1.0')
+    @route('/')
+    class TestApi extends Api {
+      @get('/')
+      default(req: Request, res: Response) {
+        res.json({ foo: 'bar' });
+      }
+    }
+    beforeEach(() => {
+      testApp = new App();
     });
-
-    it('should trigger the #http() function', () => {
-      assert.isDefined(testApp.httpServer);
+    afterEach(() => {
+      testApp.close();
+    });
+    it('connects a router', () => {
+      testApp.connect(new TestRouter());
+      chai.request(testApp).get('/').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ foo: 'bar' });
+      });
+    });
+    it('does not connect two routes with the same path', () => {
+      chai.expect(() => {
+        testApp.connect(new TestRouter());
+        testApp.connect(new TestRouter());
+      }).to.throw(Error);
+    });
+    it('does not connect two APIs with the same query version', () => {
+      chai.expect(() => {
+        testApp.connect(new TestQueryApi());
+        testApp.connect(new TestQueryApi());
+      }).to.throw(Error);
+    });
+    it('connects URL versioned APIs', () => {
+      testApp.connect(new TestApi());
+      chai.expect(testApp.routers.length).to.equal(1);
+      chai.expect(testApp.routers[0]).to.be.an('object');
+      chai.request(testApp).get('/v1.0/').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ foo: 'bar' });
+      });
+    });
+  });
+  describe(('#connectVersionedApis()'), () => {
+    @versionQuery('1.0')
+    @route('/')
+    class TestQueryApi extends Api {
+      @get('/')
+      default(req: Request, res: Response) {
+        res.json({ foo: 'bar' });
+      }
+    }
+    @versionQuery('2.0')
+    @route('/')
+    class TestQueryApi2 extends Api {
+      @get('/')
+      default(req: Request, res: Response) {
+        res.json({ version: 'two' });
+      }
+    }
+    before(() => {
+      testApp = new App();
+      testApp.connect(new TestQueryApi());
+      testApp.connect(new TestQueryApi2());
+    });
+    after(() => {
+      testApp.close();
+    });
+    it('connects query versioned APIs', () => {
+      testApp.connectVersionedApis();
+      chai.request(testApp).get('/?api-version=1.0').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ foo: 'bar' });
+      });
+      chai.request(testApp).get('/?api-version=2.0').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ version: 'two' });
+      });
     });
   });
 });

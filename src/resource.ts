@@ -36,10 +36,9 @@ export abstract class Resource extends Router {
   public list(promise?: Promise<ServerStatus>): Promise<ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the GET @ \'/\' method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the GET @ \'/\' method for this resource' }));
     }
+    return promise;
   }
 
   /**
@@ -51,10 +50,9 @@ export abstract class Resource extends Router {
   public get(promise?: Promise<ServerStatus>): Promise<ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the GET method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the GET method for this resource' }));
     }
+    return promise;
   }
 
   /**
@@ -66,10 +64,9 @@ export abstract class Resource extends Router {
   public post(promise?: Promise<ServerStatus>): Promise<ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the POST method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the POST method for this resource' }));
     }
+    return promise;
   }
 
   /**
@@ -81,10 +78,9 @@ export abstract class Resource extends Router {
   public put(promise?: Promise<ServerStatus>): Promise<ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the PUT method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the PUT method for this resource' }));
     }
+    return promise;
   }
 
   /**
@@ -96,10 +92,9 @@ export abstract class Resource extends Router {
   public del(promise ?: Promise<ServerStatus>): Promise <ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the DELETE method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the DELETE method for this resource' }));
     }
+    return promise;
   }
 
   /**
@@ -111,10 +106,9 @@ export abstract class Resource extends Router {
   public patch(promise ?: Promise<ServerStatus>): Promise <ServerStatus> {
     if (promise === undefined) {
       console.warn('You haven\'t configured the PATCH method for this resource');
-      return Promise.reject(new status.NotImplemented('You haven\'t configured the GET method for this resource'));
-    } else {
-      return promise;
-    }    
+      return Promise.reject(new status.NotImplemented({ message: 'You haven\'t configured the PATCH method for this resource' }));
+    }
+    return promise;
   }
 
 }
