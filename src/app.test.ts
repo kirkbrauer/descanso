@@ -7,7 +7,7 @@ chai.use(chaiHttp);
 import { App, Request, Response } from './app';
 import { Router } from './router';
 import { Api } from './api';
-import { get, connect, route, versionQuery, version } from './decorators';
+import { get, connect, route, versionQuery, version, middleware } from './decorators';
 
 describe('App', () => {
   let testApp: App;
@@ -186,6 +186,12 @@ describe('App', () => {
     }
     @versionQuery('2.0')
     @route('/')
+    @middleware((req, res, next) => {
+      next();
+    })
+    @middleware((req, res, next) => {
+      next();
+    })    
     class TestQueryApi2 extends Api {
       @get('/')
       default(req: Request, res: Response) {
@@ -197,9 +203,6 @@ describe('App', () => {
       testApp.connect(new TestQueryApi());
       testApp.connect(new TestQueryApi2());
     });
-    after(() => {
-      testApp.close();
-    });
     it('connects query versioned APIs', () => {
       testApp.connectVersionedApis();
       chai.request(testApp).get('/?api-version=1.0').end((err, res) => {
@@ -207,6 +210,23 @@ describe('App', () => {
         chai.expect(res.body).to.deep.equal({ foo: 'bar' });
       });
       chai.request(testApp).get('/?api-version=2.0').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ version: 'two' });
+      });
+    });
+  });
+  describe('versioned API handler', () => {
+    after(() => {
+      testApp.close();
+    });
+    it('uses the latest version if none is specified', () => {
+      chai.request(testApp).get('/').end((err, res) => {
+        chai.expect(res).to.have.status(200);
+        chai.expect(res.body).to.deep.equal({ version: 'two' });
+      });
+    });
+    it('uses the latest version if an invalid version is specified', () => {
+      chai.request(testApp).get('/?api-version=4.0').end((err, res) => {
         chai.expect(res).to.have.status(200);
         chai.expect(res.body).to.deep.equal({ version: 'two' });
       });

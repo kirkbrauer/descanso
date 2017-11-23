@@ -1,4 +1,4 @@
-# Descanso [![Build Status](https://travis-ci.org/kirkbrauer/descanso.svg?branch=1.0.0)](https://travis-ci.org/kirkbrauer/descanso)
+# Descanso [![Build Status](https://travis-ci.org/kirkbrauer/descanso.svg)](https://travis-ci.org/kirkbrauer/descanso)
 Define [express][express] routes using ES6 classes and decorators.
 
 ## Basic Usage
