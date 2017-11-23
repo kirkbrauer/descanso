@@ -7,14 +7,14 @@
     "emitDecoratorMetadata": true,
     "outDir": "./lib",
     "strict": true,
-    "moduleResolution": "node",
-    "sourceMap": true
+    "moduleResolution": "node"
   },
   "include": [
     "./src/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./src/**/*.test.ts"
   ],
   "jsdoc": "./docs"
 }

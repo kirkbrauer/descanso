@@ -10,5 +10,10 @@
         "max-line-length": false,
         "object-shorthand-properties-first": false
     },
-    "rulesDirectory": []
+    "rulesDirectory": [],
+    "linterOptions": {
+        "exclude": [
+            "src/**/*.test.ts"
+        ]
+    }
 }

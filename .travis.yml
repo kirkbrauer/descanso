@@ -1,11 +1,20 @@
 language: node_js
 node_js:
-  - "6"
+- '6'
 sudo: false
 cache:
   directories:
-    - "node_modules"
+  - node_modules
 script:
-  - "npm run build"
-  - "npm test"
-after_script: "npm install coveralls && cat ./coverage/lcov.info | coveralls"
+  - npm test
+  - npm run build
+deploy:
+  provider: npm
+  email: kirkbrauer@outlook.com
+  skip_cleanup: true
+  api_key:
+    secure: 3wcuKYUPKkFiwKHyM5dAN2GYq9i3hjTF5MXPHN5xPGqCuqxBO7RCsMyRPYQc0g7qtYMAmhqUGVdTgSWwdbdqUU6Ox9WWhwrOeeyMknaZ6ZXUrNP54yA+eFQ0AblS8tdudMXVeFISMwP99Sg185ymutAvUp8dIsee0VAkeqR50Mtrz2odsFfFjsJ8e2wbKeXMaXFG4U9E9/jkrLCLN5PspJlJ3203XCKLlUR3P0g9chMjl06947VQu8Ys/GABUKsL6yKhsJ8JtEJR9mo5XTFg5lb0LPdXOun+poq+NRP0ZS2Hb+dtH+kf7JDYPnO3W3OYz91N6AIFWY9w2B9QUQJRTUO1qF28kz1FOJhgiIp7XuxnYwIOyMPaOuu7+q8ll27LlclvNSmyLKd3Pyy7szEwtq+F63D26p0nahNKsys9XXy3s2PW9K3DNbs+CoyL+3BOVIVgjuNhEsNtiNU8zGx6ayE8imvE5P1YHEQYK7M4AwRGlBA/J85SKVmWoFb/dHALkHOiUe8lVsTE2PsCLnkYEiwlrz6pK4ERXxqfBNZC/pc2z0xPu0qJUVIGoi6HWL6+N7mvTermYumbUTgOmz7YADyTQeHPgLA6A3ecApCX+hj7UkhhvXIagSu6NZlHO2tijsvmgNQ8WpPbJZWO//f6AUYzDkZd/iWCjfdJbC82/s4=
+  on:
+    tags: true
+    repo: kirkbrauer/descanso
+after_script: npm install coveralls && cat ./coverage/lcov.info | coveralls

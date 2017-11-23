@@ -3,4 +3,9 @@ coverage
 docs
 src
 examples
+test
+CNAME
+_config.yml
+.travis.yml
+tslint.json
 lib/**/*.js.map

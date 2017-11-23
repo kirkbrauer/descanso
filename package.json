@@ -1,16 +1,21 @@
 {
   "name": "descanso",
   "version": "1.0.0",
-  "description": "Define express routes with ES6 classes and decorators.",
+  "description": "Define express routes using ES6 classes and decorators.",
+  "keywords": [
+    "express",
+    "typescript",
+    "decorators"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "lint": "tslint -p . -c tslint.json 'src/**/*.ts'",
     "test": "npm run lint && npm run cover",
     "cover": "rimraf ./coverage && nyc mocha",
     "prepublishOnly": "npm run clean && npm run test && npm run build",
-    "document": "typedoc --out docs ./src --mode modules",
+    "document": "typedoc --exclude \"**/*.test.ts\" --mode modules --out docs ./src",
     "clean": "rimraf ./lib"
   },
   "repository": {
@@ -50,7 +55,6 @@
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-http": "^3.0.3",
     "@types/chai-spies": "0.0.0",
-    "@types/express": "^4.0.39",
     "@types/http-status": "^0.2.30",
     "@types/mocha": "^2.2.44",
     "@types/portscanner": "^2.1.0",
@@ -73,6 +77,8 @@
     "typescript": "^2.6.1"
   },
   "dependencies": {
+    "@types/express": "^4.0.39",
+    "@types/node": "^8.0.53",
     "async": "^2.6.0",
     "express": "^4.16.2",
     "http-status": "^1.0.1",
