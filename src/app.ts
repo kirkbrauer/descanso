@@ -320,7 +320,7 @@ export class App {
    */
   public useVersionedApi(api: Api, req: express.Request, res: express.Response, next: express.NextFunction): void {
     // Check if middleware exists
-    if (api.middleware !== undefined) {
+    if (api.middleware.length > 0) {
       // Recursive function to use the middleware
       function assumedNext(index: number) {
         if (index === 0) {
