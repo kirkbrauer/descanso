@@ -6,7 +6,7 @@ chai.use(chaiHttp);
 
 import { App, Request, Response } from './app';
 import { Router } from './router';
-import { Api } from './Api';
+import { Api } from './api';
 import { get, connect, route, versionQuery, version } from './decorators';
 
 describe('App', () => {
